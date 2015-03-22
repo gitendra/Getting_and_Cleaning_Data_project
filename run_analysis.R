@@ -1,39 +1,60 @@
+library("data.table")
 library(reshape2)
 
-# Load the datasets
-test_subject <- read.table("./test/subject_test.txt")
-test_x <- read.table("./test/X_test.txt")
-test_y <- read.table("./test/y_test.txt")
+# Load: activity labels
+activity_labels <- read.table("activity_labels.txt")[,2]
 
-train_subject <- read.table("./train/subject_train.txt")
-train_x <- read.table("./train/X_train.txt")
-train_y <- read.table("./train/y_train.txt")
+# Load: data column names
+features <- read.table("features.txt")[,2]
 
-features <- read.table("./features.txt")
-activity_labels <- read.table("./activity_labels.txt")
+# Extract only the measurements on the mean and standard deviation for each measurement.
+extract_features <- grepl("mean|std", features)
 
-# Merge the test and train subject datasets
-subject <- rbind(test_subject, train_subject)
-colnames(subject) <- "subject"
+# Load and process X_test & y_test data.
+X_test <- read.table("./test/X_test.txt")
+y_test <- read.table("./test/y_test.txt")
+subject_test <- read.table("./test/subject_test.txt")
 
-# Merge the test and train labels and then apply the textual labels
-label <- rbind(test_y, train_y)
-label <- merge(label, activity_labels, by=1)[,2]
+names(X_test) = features
 
-# Merge the test and train dataset ...
-data <- rbind(test.x, train.x)
-colnames(data) <- features[, 2]
+# Extract only the measurements on the mean and standard deviation for each measurement.
+X_test = X_test[,extract_features]
 
-# Merge all three datasets
-data <- cbind(subject, label, data)
+# Load activity labels
+y_test[,2] = activity_labels[y_test[,1]]
+names(y_test) = c("Activity_ID", "Activity_Label")
+names(subject_test) = "subject"
 
-# Create a smaller dataset containing only the mean and std variables
-search <- grep("-mean|-std", colnames(data))
-data_mean_std <- data[,c(1,2,search)]
+# Bind data
+test_data <- cbind(as.data.table(subject_test), y_test, X_test)
 
-# Derive the means, grouped by subject/label
-melted = melt(data_mean_std, id.var = c("subject", "label"))
-means = dcast(melted , subject + label ~ variable, mean)
+# Load and process X_train & y_train data.
+X_train <- read.table("./train/X_train.txt")
+y_train <- read.table("./train/y_train.txt")
 
-# Save the resulting dataset
-write.table(means, file="./tidy_data.txt")
+subject_train <- read.table("./train/subject_train.txt")
+
+names(X_train) = features
+
+# Extract only the measurements on the mean and standard deviation for each measurement.
+X_train = X_train[,extract_features]
+
+# Load activity data
+y_train[,2] = activity_labels[y_train[,1]]
+names(y_train) = c("Activity_ID", "Activity_Label")
+names(subject_train) = "subject"
+
+# Bind data
+train_data <- cbind(as.data.table(subject_train), y_train, X_train)
+
+# Merge test and train data
+data = rbind(test_data, train_data)
+
+id_labels   = c("subject", "Activity_ID", "Activity_Label")
+data_labels = setdiff(colnames(data), id_labels)
+melt_data      = melt(data, id = id_labels, measure.vars = data_labels)
+
+# Apply mean function to dataset using dcast function
+tidy_data   = dcast(melt_data, subject + Activity_Label ~ variable, mean)
+
+write.table(tidy_data, file = "./tidy_data.txt")
