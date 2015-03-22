@@ -29,7 +29,9 @@ Create run_analysis.R which will performs the following:
 Steps to work on this course project
 
 Download the data source from "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip" and put into a folder on your local drive. You'll have a UCI HAR Dataset folder.
+
 Put run_analysis.R in the UCI HAR Dataset folder, then set it as your working directory using setwd() function in RStudio.
+
 Run source("run_analysis.R"), then it will generate a new file tidy_data.txt in your working directory
 
 
